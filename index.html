@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Shoebox · private receipts, hybrid AI</title>
+<link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo">▣</span> Shoebox</div>
+  <div class="meter" id="meter" title="Where your AI requests ran">
+    <div class="meter-bar"><span id="meter-fill"></span></div>
+    <span id="meter-label">0 requests yet</span>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <h1>Your receipts, read on your device.</h1>
+    <p>Snap a receipt and Gemini Nano reads it right here, offline and private. Bank statements are too big for that, so they go to the cloud, and you can always see which one did the work.</p>
+    <div class="model-status" id="model-status">
+      <span class="dot"></span><span id="model-text">Checking on-device model…</span>
+      <button id="model-btn" class="ghost" hidden>Download on-device model</button>
+    </div>
+  </section>
+
+  <section class="actions">
+    <label class="drop" id="drop-receipt">
+      <input type="file" id="receipt-input" accept="image/jpeg,image/png" multiple hidden />
+      <span class="drop-icon">🧾</span>
+      <strong>Add receipts</strong>
+      <small>JPEG or PNG · read on-device</small>
+    </label>
+    <label class="drop" id="drop-statement">
+      <input type="file" id="statement-input" accept="application/pdf" hidden />
+      <span class="drop-icon">🏦</span>
+      <strong>Add a bank statement</strong>
+      <small>PDF · read in the cloud</small>
+    </label>
+  </section>
+
+  <section class="ledger">
+    <div class="ledger-head">
+      <h2>Ledger</h2>
+      <div class="ledger-tools">
+        <span id="totals"></span>
+        <button id="summary-btn">Tax-year summary</button>
+        <button id="clear-btn" class="ghost">Clear</button>
+      </div>
+    </div>
+    <div id="queue"></div>
+    <table id="ledger-table">
+      <thead><tr><th>Date</th><th>Merchant</th><th>Category</th><th class="num">VAT</th><th class="num">Total</th><th>Read by</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <p class="empty" id="empty">No receipts yet. Drop one above.</p>
+  </section>
+
+  <section class="summary" id="summary" hidden>
+    <h2>Tax-year summary <span class="badge" id="summary-badge"></span></h2>
+    <div id="summary-cats"></div>
+    <div id="summary-text"></div>
+  </section>
+</main>
+
+<footer>Built by Flovr with Firebase AI Logic hybrid inference. Prototype, not tax advice.</footer>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
