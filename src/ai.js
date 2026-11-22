@@ -2,15 +2,16 @@
 import { initializeApp } from 'firebase/app';
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 import { getAI, getGenerativeModel, GoogleAIBackend, InferenceMode, Schema } from 'firebase/ai';
-import { firebaseConfig, recaptchaSiteKey } from './firebase-config.js';
+import { firebaseConfig, recaptchaSiteKey, appCheckDebugToken } from './firebase-config.js';
 
+const CLOUD_MODEL = 'gemini-3.5-flash-lite';
 export const CATEGORIES = ['Travel', 'Meals', 'Office & software', 'Equipment', 'Phone & internet', 'Training', 'Marketing', 'Other'];
 
 let ai = null;
 export function setupFirebase() {
   if (!firebaseConfig?.apiKey) return false;
   const app = initializeApp(firebaseConfig);
-  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') self.FIREBASE_APPCHECK_DEBUG_TOKEN = appCheckDebugToken || true;
   const local = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
   if (recaptchaSiteKey || local) initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider(recaptchaSiteKey || 'debug-only'), isTokenAutoRefreshEnabled: true });
   ai = getAI(app, { backend: new GoogleAIBackend() });
@@ -56,14 +57,14 @@ function models() {
       createOptions: { expectedInputs: [{ type: 'text' }, { type: 'image' }], expectedOutputs: [{ type: 'text', languages: ['en'] }] },
       promptOptions: { responseConstraint: receiptJson },
     },
-    inCloudParams: { generationConfig: { responseMimeType: 'application/json', responseSchema: receiptSchema, temperature: 0 } },
+    inCloudParams: { model: CLOUD_MODEL, generationConfig: { responseMimeType: 'application/json', responseSchema: receiptSchema, temperature: 0 } },
   });
   // PDFs can't run on-device, so hybrid routing sends statements to the cloud by design.
   statementModel = getGenerativeModel(ai, {
     mode: InferenceMode.PREFER_ON_DEVICE,
-    inCloudParams: { generationConfig: { responseMimeType: 'application/json', responseSchema: statementSchema, temperature: 0 } },
+    inCloudParams: { model: CLOUD_MODEL, generationConfig: { responseMimeType: 'application/json', responseSchema: statementSchema, temperature: 0 } },
   });
-  summaryModel = getGenerativeModel(ai, { mode: InferenceMode.PREFER_ON_DEVICE });
+  summaryModel = getGenerativeModel(ai, { mode: InferenceMode.PREFER_ON_DEVICE, inCloudParams: { model: CLOUD_MODEL } });
 }
 
 export function deviceModel() { models(); return receiptModel; }

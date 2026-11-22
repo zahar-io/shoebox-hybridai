@@ -10,6 +10,7 @@ const store = {
 const LABEL = { on_device: 'On this device', in_cloud: 'Cloud' };
 const badge = (src) => `<span class="badge ${src.toUpperCase()}">${LABEL[src] || src}</span>`;
 const money = (n, c = 'GBP') => { try { return new Intl.NumberFormat('en-GB', { style: 'currency', currency: c || 'GBP' }).format(n || 0); } catch { return `${(n || 0).toFixed(2)} ${c}`; } };
+const md = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/^\s*[*-]\s+/gm, '• ');
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 function count(src) { const s = store.stats; s[src] = (s[src] || 0) + 1; store.stats = s; meter(); }
@@ -49,7 +50,9 @@ async function addStatement(file) {
   const j = job(`Reading statement ${file.name} (PDF, goes to the cloud)`);
   try {
     const { data, source, ms } = await readStatement(file);
-    const biz = data.filter((t) => t.business !== false).map((t) => ({ ...t, vat: 0, source, ms, kind: 'statement', id: crypto.randomUUID() }));
+    const have = store.rows.filter((r) => r.kind === 'receipt');
+    const dup = (t) => have.some((r) => Math.abs((+r.total || 0) - (+t.total || 0)) < 0.01 && Math.abs(new Date(r.date) - new Date(t.date)) <= 2 * 864e5);
+    const biz = data.filter((t) => t.business !== false && !dup(t)).map((t) => ({ ...t, vat: 0, source, ms, kind: 'statement', id: crypto.randomUUID() }));
     store.rows = [...store.rows, ...biz]; count(source); render(); j.done();
   } catch (e) { console.error(e); j.fail(e.message || 'Could not read it'); }
 }
@@ -60,10 +63,10 @@ async function summary() {
   const sorted = Object.entries(by).sort((a, b) => b[1] - a[1]);
   $('#summary').hidden = false;
   $('#summary-cats').innerHTML = sorted.map(([c, v]) => `<div class="cat"><span>${esc(c)}</span><span class="num">${money(v)}</span></div>`).join('');
-  $('#summary-text').textContent = ''; $('#summary-badge').outerHTML = '<span class="badge" id="summary-badge">thinking…</span>';
+  let acc = ''; $('#summary-text').textContent = ''; $('#summary-badge').outerHTML = '<span class="badge" id="summary-badge">thinking…</span>';
   try {
     for await (const c of summarise(sorted.map(([k, v]) => `${k}: £${v.toFixed(2)}`).join('\n'))) {
-      $('#summary-text').textContent += c.text;
+      acc += c.text; $('#summary-text').innerHTML = md(acc.trim());
       if (c.done) { $('#summary-badge').outerHTML = badge(c.source).replace('class="badge', 'id="summary-badge" class="badge'); count(c.source); }
     }
   } catch (e) { $('#summary-text').textContent = `Could not write the summary: ${e.message}`; }
