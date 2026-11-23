@@ -104,5 +104,13 @@ if (!setupFirebase()) {
 dropzone('#drop-receipt', $('#receipt-input'), (fs) => addReceipts(fs.filter((f) => /image\/(jpeg|png)/.test(f.type))));
 dropzone('#drop-statement', $('#statement-input'), (fs) => fs[0] && addStatement(fs[0]));
 $('#summary-btn').onclick = summary;
+async function sampleFile(name, type) { const b = await (await fetch(`/samples/${name}`)).blob(); return new File([b], name, { type }); }
+$('#sample-btn').onclick = async () => {
+  $('#sample-btn').disabled = true;
+  const receipts = await Promise.all(['pret.png', 'trainline.png', 'currys.png'].map((n) => sampleFile(n, 'image/png')));
+  await addReceipts(receipts);
+  await addStatement(await sampleFile('statement.pdf', 'application/pdf'));
+  $('#sample-btn').disabled = false;
+};
 $('#clear-btn').onclick = () => { store.rows = []; store.stats = { on_device: 0, in_cloud: 0 }; render(); meter(); $('#summary').hidden = true; };
 render(); meter();
