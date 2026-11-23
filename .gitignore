@@ -2,3 +2,4 @@ node_modules
 dist
 src/firebase-config.js
 *.log
+.env.local

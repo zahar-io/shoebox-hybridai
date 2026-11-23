@@ -2,7 +2,7 @@
 import { initializeApp } from 'firebase/app';
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 import { getAI, getGenerativeModel, GoogleAIBackend, InferenceMode, Schema } from 'firebase/ai';
-import { firebaseConfig, recaptchaSiteKey, appCheckDebugToken } from './firebase-config.js';
+import { firebaseConfig, recaptchaSiteKey } from './firebase-config.js';
 
 const CLOUD_MODEL = 'gemini-3.5-flash-lite';
 export const CATEGORIES = ['Travel', 'Meals', 'Office & software', 'Equipment', 'Phone & internet', 'Training', 'Marketing', 'Other'];
@@ -11,8 +11,9 @@ let ai = null;
 export function setupFirebase() {
   if (!firebaseConfig?.apiKey) return false;
   const app = initializeApp(firebaseConfig);
-  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') self.FIREBASE_APPCHECK_DEBUG_TOKEN = appCheckDebugToken || true;
-  const local = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  // Debug token only in local dev builds: never shipped in the hosted bundle.
+  if (import.meta.env.DEV) self.FIREBASE_APPCHECK_DEBUG_TOKEN = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN || true;
+  const local = import.meta.env.DEV;
   if (recaptchaSiteKey || local) initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider(recaptchaSiteKey || 'debug-only'), isTokenAutoRefreshEnabled: true });
   ai = getAI(app, { backend: new GoogleAIBackend() });
   return true;
