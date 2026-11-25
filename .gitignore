@@ -3,3 +3,4 @@ dist
 src/firebase-config.js
 *.log
 .env.local
+.firebase/
